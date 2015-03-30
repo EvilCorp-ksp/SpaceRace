@@ -53,6 +53,7 @@
     <Compile Include="SRRival.cs" />
     <Compile Include="SRTraining.cs" />
     <Compile Include="SRScience.cs" />
+    <Compile Include="SRUtilities.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -12,7 +12,7 @@ namespace SpaceRace
     [KSPAddon(KSPAddon.Startup.SpaceCentre, false)]
     public class SpaceRaceMain : MonoBehaviour
     {
-        private String save_folder = "";
+        public static String save_folder = "";
         public ApplicationLauncherButton button;
         private Rect mainWindow = new Rect(Screen.width / 2 - 200, Screen.height / 2 - 62, 400, 125);
         private Rect trainingWindow = new Rect(Screen.width / 8 - 50, Screen.height / 4 + 100, 400, 300);
@@ -29,6 +29,7 @@ namespace SpaceRace
         Vector2 scrollPositionName = Vector2.zero;
         Vector2 scrollPositionENG = Vector2.zero;
         Vector2 scrollPositionRES = Vector2.zero;
+        public static int cnCounter = 0;
 
         void Update()
         {
@@ -87,39 +88,36 @@ namespace SpaceRace
 
         public void TriggerResearch(GameEvents.HostTargetAction<RDTech, RDTech.OperationResult> result)
         {
-            ScienceProject project = new ScienceProject();
+            Debug.Log("SpaceRace: Purchased tech, firing event.");
             if (result.host != null && result.target == RDTech.OperationResult.Successful)
             {
-                project.node = ResearchAndDevelopment.Instance.GetTechState(result.host.techID);
-                project.UTTimeCompleted = 0f;
-                project.InProgress = false;
-                project.KerbalAssigned = null;
-                project.TechNode = result.host.techID;
-                project.TechName = result.host.title;
-                project.Cost = result.host.scienceCost;
+                result.host.state = RDTech.State.Unavailable;
+                ScienceProject project = new ScienceProject() { node = ResearchAndDevelopment.Instance.GetTechState(result.host.techID), UTTimeCompleted = 9999999999f, KerbalAssigned = null, TechNode = result.host.techID, TechName = result.host.title, Cost = result.host.scienceCost, InProgress = false };
                 if (!project.CheckList())
                 {
+                    Debug.Log("SpaceRace: Adding science project to list.");
                     SRScience.researchProjects.Add(project);
+                    ScreenMessages.PostScreenMessage("Science project added to list! Please assign a Scientist to research.", 5.0f, ScreenMessageStyle.UPPER_LEFT);
                 }
                 else 
                 {
                     project = SRScience.researchProjects.FirstOrDefault(p => p.TechNode == result.host.techID);
                     if (project.InProgress == true)
                     {
-                        result.host.state = RDTech.State.Unavailable;
                         ResearchAndDevelopment.Instance.AddScience(result.host.scienceCost, TransactionReasons.RnDTechResearch);
-                        ScreenMessages.PostScreenMessage("Already begun, research will complete in " + FormatTime(CalcTimeLeft(project.UTTimeCompleted)) + ".", 4.0f, ScreenMessageStyle.UPPER_LEFT);
+                        ScreenMessages.PostScreenMessage("Already begun, research will complete in " + FormatTime(CalcTimeLeft(project.UTTimeCompleted)) + ".", 5.0f, ScreenMessageStyle.UPPER_LEFT);
                         Debug.Log("Passed UT time of " + CalcTimeLeft(project.UTTimeCompleted));
                     }
                 }
+            }
+            else
+            {
+                Debug.Log("SpaceRace: Unknown error in Research Center");
             }
         }
 
         public double CalcTimeLeft(double uttime)
         {
-            //Debug.Log("Complete: " + uttime);
-            //Debug.Log("Current: " + Planetarium.GetUniversalTime());
-            //Debug.Log("Difference: " + Math.Round(uttime - Planetarium.GetUniversalTime(), 0, MidpointRounding.AwayFromZero));
             return Math.Round(uttime - Planetarium.GetUniversalTime(), 0, MidpointRounding.AwayFromZero);
         }
 

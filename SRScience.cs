@@ -10,7 +10,15 @@ namespace SpaceRace
     public class SRScience : MonoBehaviour
     {
         public static List<ScienceProject> researchProjects = new List<ScienceProject>();
-        public static List<RDTech> purchasedTechs = new List<RDTech>();
+
+        public static void BuildProjectList()
+        {
+            SRUtilities.researchList.Clear();
+            foreach (ScienceProject project in researchProjects)
+            {
+                SRUtilities.researchList.Add(project.TechName + ";" + project.TechNode + ";" + project.KerbalAssigned + ";" + project.UTTimeCompleted.ToString() + ";" + project.InProgress);
+            }
+        }
 
         public static bool CheckResearchProject(List<ScienceProject> p, string id)
         {
