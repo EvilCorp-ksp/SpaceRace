@@ -9,14 +9,13 @@ namespace SpaceRace
 {
     public class SRScience : MonoBehaviour
     {
-        public static List<ScienceProject> researchProjects = new List<ScienceProject>();
-
         public static void BuildProjectList()
         {
             SRUtilities.researchList.Clear();
-            foreach (ScienceProject project in researchProjects)
+            foreach (ScienceProject project in SpaceRaceMain.Instance.researchProjects)
             {
-                SRUtilities.researchList.Add(project.TechName + ";" + project.TechNode + ";" + project.KerbalAssigned + ";" + project.UTTimeCompleted.ToString() + ";" + project.InProgress);
+                SRUtilities.researchList.Add(project.TechName + ";" + project.TechNode + ";" + project.KerbalAssigned + ";" + project.UTTimeCompleted.ToString() + ";" + project.InProgress + ";" + project.Cost);
+                Debug.Log("SpaceRace: Added to research list for saving: " + project.TechName + ";" + project.TechNode + ";" + project.KerbalAssigned + ";" + project.UTTimeCompleted.ToString() + ";" + project.InProgress + ";" + project.Cost);
             }
         }
 
@@ -27,23 +26,22 @@ namespace SpaceRace
 
         public static void CheckCompletedProjects()
         {
-            foreach (ScienceProject project in researchProjects)
+            foreach (ScienceProject project in SpaceRaceMain.Instance.researchProjects)
             {
                 if (Planetarium.GetUniversalTime() >= project.UTTimeCompleted)
                 {
-
                     CompleteResearchProject(project.KerbalAssigned, project.TechNode, project.node);
                 }
-                else
-                {
-                    project.Lock();
-                }
+                //else
+                //{
+                //    project.Lock();
+                //}
             }
         }
 
         public static void StartResearch(string staff, double timeending, string techid, bool inprogress)
         {
-            foreach (ScienceProject p in researchProjects)
+            foreach (ScienceProject p in SpaceRaceMain.Instance.researchProjects)
             {
                 if (p.TechNode == techid)
                 {
@@ -60,23 +58,21 @@ namespace SpaceRace
             {
                 level = 1;
             }
-            Debug.Log("Starting CalcTime");
             double result = Math.Round(Planetarium.GetUniversalTime(), 0, MidpointRounding.AwayFromZero);
-            Debug.Log("Result 1: " + result);
             result += (21600 * sciencecost) / level;
-            Debug.Log("Result 2: " + result);
             return result;
         }
 
  
         public static void CompleteResearchProject(string staff, string tech, ProtoTechNode node)
         {
-            ScienceProject project = researchProjects.FirstOrDefault(p => p.TechNode == tech);
+            ScienceProject project = SpaceRaceMain.Instance.researchProjects.FirstOrDefault(p => p.TechNode == tech);
             ProtoCrewMember crew = HighLogic.CurrentGame.CrewRoster.Crew.FirstOrDefault(c => c.name == staff);
-            project.Unlock();
+            project.node.state = RDTech.State.Available;
+            ResearchAndDevelopment.Instance.SetTechState(project.TechNode, project.node);
             crew.rosterStatus = ProtoCrewMember.RosterStatus.Available;
-            int index = researchProjects.FindIndex(i => i.TechNode == tech);
-            researchProjects.RemoveAt(index);
+            int index = SpaceRaceMain.Instance.researchProjects.FindIndex(i => i.TechNode == tech);
+            SpaceRaceMain.Instance.researchProjects.RemoveAt(index);
          }    
     }
 
@@ -88,7 +84,7 @@ namespace SpaceRace
         public bool InProgress { get; set; } //Boolean for progress status.
         public string TechNode { get; set; } //Tech node internal name 
         public string TechName { get; set; }
-        public ProtoTechNode node { get; set; } //Node itself
+        public ProtoTechNode node  = new ProtoTechNode(); 
         public int Cost { get; set; }
         public void Unlock()
         {
@@ -97,12 +93,17 @@ namespace SpaceRace
         }
         public void Lock()
         {
+            //if (node.state == RDTech.State.Available)
+            //{
+            Debug.Log(node.techID);
             node.state = RDTech.State.Unavailable;
-            ResearchAndDevelopment.Instance.SetTechState(TechNode, node);
+            ResearchAndDevelopment.Instance.SetTechState(node.techID, node);
+            Debug.Log("SpaceRace: Locked project.");
+            //}
         }
         public bool CheckList()
         {
-            return SRScience.researchProjects.FirstOrDefault(t => t.TechNode == this.TechNode) != null;
+            return SpaceRaceMain.Instance.researchProjects.FirstOrDefault(t => t.TechNode == this.TechNode) != null;
         }
     }
 }

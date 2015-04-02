@@ -13,6 +13,7 @@ namespace SpaceRace
     public class SpaceRaceMain : MonoBehaviour
     {
         public static String save_folder = "";
+        public static string spaceracefolder = "";
         public ApplicationLauncherButton button;
         private Rect mainWindow = new Rect(Screen.width / 2 - 200, Screen.height / 2 - 62, 400, 125);
         private Rect trainingWindow = new Rect(Screen.width / 8 - 50, Screen.height / 4 + 100, 400, 300);
@@ -20,12 +21,13 @@ namespace SpaceRace
         private Rect engineeringWindow = new Rect(Screen.width / 8, Screen.height / 4 + 100, 800, 400);
         private Rect rivalWindow = new Rect(Screen.width / 8, Screen.height / 4 + 100, 400, 125);
         private Rect kerbalDetails = new Rect(200, 200, 400, 275);
-        private Rect scienceProjects = new Rect(Screen.width / 2 - 100, Screen.height / 2 - 100, 200, 200);
+        private Rect scienceProjects = new Rect(Screen.width / 2 - 200, Screen.height / 2 - 100, 400, 200);
         private Rect assignKerbal = new Rect(Screen.width / 2 - 100, Screen.height / 2 - 100, 200, 200);
         private ProtoCrewMember kerbCrew;
         public static SpaceRaceMain Instance;
         private ProtoTechNode nodeBuffer;
         List<ProtoCrewMember> crewMembers = new List<ProtoCrewMember>();
+        public List<ScienceProject> researchProjects = new List<ScienceProject>();
         Vector2 scrollPositionName = Vector2.zero;
         Vector2 scrollPositionENG = Vector2.zero;
         Vector2 scrollPositionRES = Vector2.zero;
@@ -47,6 +49,9 @@ namespace SpaceRace
             }
             Instance = this;
             save_folder = GetRootPath() + "/saves/" + HighLogic.SaveFolder + "/";
+            Directory.CreateDirectory(SpaceRaceMain.save_folder + "/SpaceRace");
+            spaceracefolder = save_folder + "/SpaceRace/";
+            Debug.Log("SpaceRace: Folder set to " + spaceracefolder);
             Debug.Log("SpaceRace: Adding events");
             GameEvents.onGUIApplicationLauncherReady.Add(OnGUIAppLauncherReady);
             GameEvents.OnTechnologyResearched.Add(TriggerResearch);
@@ -58,32 +63,38 @@ namespace SpaceRace
         {
             Debug.Log("Firing AddEngineeringProject");
             ScienceProject sp = new ScienceProject();
-            sp = SRScience.researchProjects.FirstOrDefault(s => s.node.techID == ap.TechRequired);
+            Debug.Log("Verifying research project is complete");
+            sp = researchProjects.FirstOrDefault(s => s.TechNode == ap.TechRequired);
             if (sp != null)
             {
                 ScreenMessages.PostScreenMessage("Technology required is still being researched!", 5.0f, ScreenMessageStyle.UPPER_LEFT);
                 Funding.Instance.AddFunds(ap.entryCost, TransactionReasons.RnDPartPurchase);
                 sp.node.partsPurchased.Remove(ap);
-                sp.Lock();
-                return;
+                sp.node.state = RDTech.State.Unavailable;
+                ResearchAndDevelopment.Instance.SetTechState(sp.TechNode, sp.node);
             }
-            SREngineering.EngineeringProject project = new SREngineering.EngineeringProject();
-            project = SREngineering.engineeringProjects.FirstOrDefault(p => p.Part == ap);
-            if (project == null)
+            else
             {
-                SREngineering.engineeringProjects.Add(new SREngineering.EngineeringProject { Part = ap, Category = ap.category });
+                SREngineering.EngineeringProject project = new SREngineering.EngineeringProject();
+                project = SREngineering.engineeringProjects.FirstOrDefault(p => p.Part == ap);
+                if (project == null)
+                {
+                    SREngineering.engineeringProjects.Add(new SREngineering.EngineeringProject { Part = ap, Category = ap.category });
 
+                }
             }
             SREngineering.HideParts();
         }
 
         public void TriggerLock()
         {
-            foreach (ScienceProject project in SRScience.researchProjects)
+            Debug.Log("SpaceRace: Fired TriggerLock.");
+            Debug.Log(researchProjects.Count + " projects in the list");
+            foreach (ScienceProject project in researchProjects)
             {
                 project.Lock();
             }
-           RenderingManager.AddToPostDrawQueue(0, ScienceDraw);
+            RenderingManager.AddToPostDrawQueue(0, ScienceDraw);
         }
 
         public void TriggerResearch(GameEvents.HostTargetAction<RDTech, RDTech.OperationResult> result)
@@ -96,17 +107,22 @@ namespace SpaceRace
                 if (!project.CheckList())
                 {
                     Debug.Log("SpaceRace: Adding science project to list.");
-                    SRScience.researchProjects.Add(project);
+                    researchProjects.Add(project);
                     ScreenMessages.PostScreenMessage("Science project added to list! Please assign a Scientist to research.", 5.0f, ScreenMessageStyle.UPPER_LEFT);
+                    project.Lock();
                 }
                 else 
                 {
-                    project = SRScience.researchProjects.FirstOrDefault(p => p.TechNode == result.host.techID);
+                    project = researchProjects.FirstOrDefault(p => p.TechNode == result.host.techID);
                     if (project.InProgress == true)
                     {
                         ResearchAndDevelopment.Instance.AddScience(result.host.scienceCost, TransactionReasons.RnDTechResearch);
                         ScreenMessages.PostScreenMessage("Already begun, research will complete in " + FormatTime(CalcTimeLeft(project.UTTimeCompleted)) + ".", 5.0f, ScreenMessageStyle.UPPER_LEFT);
                         Debug.Log("Passed UT time of " + CalcTimeLeft(project.UTTimeCompleted));
+                        if (project.node.state == RDTech.State.Available)
+                        {
+                            project.Lock();
+                        }
                     }
                 }
             }
@@ -125,42 +141,55 @@ namespace SpaceRace
         {
             string time = "";
             string days = Math.Floor(uttime / 21600).ToString();
-            Debug.Log("Days: " + days);
+            //Debug.Log("Days: " + days);
             uttime = uttime % 21600;
             string hours = Math.Floor(uttime / 3600).ToString();
-            Debug.Log("Hours: " + hours);
+            //Debug.Log("Hours: " + hours);
             uttime = uttime % 3600;
             string minutes = Math.Floor(uttime / 60).ToString();
-            Debug.Log("Minutes: " + hours);
-            uttime = uttime % 60;
+            //Debug.Log("Minutes: " + hours);
+            uttime = Math.Round(uttime % 60, 9, MidpointRounding.AwayFromZero);
             time = days + ":" + hours + ":" + minutes + ":" + uttime.ToString();
             return time;
         }
 
         private void ScienceWindow(int windowId)
         {
-            int counter = 0;
+            //int counter = 0;
             GUILayout.BeginVertical();
             scrollPositionRES = GUILayout.BeginScrollView(scrollPositionRES, HighLogic.Skin.scrollView);
-            foreach (ScienceProject project in SRScience.researchProjects)
+            foreach (ScienceProject project in researchProjects)
             {
-                if (project.InProgress != true)
+                GUILayout.BeginHorizontal();
+                //if (project.InProgress != true)
+                //{
+                if (GUILayout.Button(project.TechName, HighLogic.Skin.button))
                 {
-                    if (GUILayout.Button(project.TechName, HighLogic.Skin.button))
-                    {
-                        nodeBuffer = project.node;
-                        RenderingManager.AddToPostDrawQueue(0, AssignKerbDraw);
-                        RenderingManager.RemoveFromPostDrawQueue(0, ScienceDraw);
-                    }
-                    counter++;
+                    
                 }
+                if (GUILayout.Button(project.KerbalAssigned, HighLogic.Skin.button))
+                {
+                    nodeBuffer = project.node;
+                    RenderingManager.AddToPostDrawQueue(0, AssignKerbDraw);
+                    //RenderingManager.RemoveFromPostDrawQueue(0, ScienceDraw);
+                }
+                GUILayout.Label(FormatTime(project.UTTimeCompleted - Planetarium.GetUniversalTime()), HighLogic.Skin.label);
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button("Rush Project", HighLogic.Skin.button))
+                {
+
+                }
+                GUILayout.EndHorizontal();
+                    //counter++;
+                //}
             }
+            
+            //if (counter == 0)
+            //{
+            //    RenderingManager.RemoveFromPostDrawQueue(0, ScienceDraw);
+            //}
             GUILayout.EndScrollView();
             if (GUILayout.Button("Close", HighLogic.Skin.button))
-            {
-                RenderingManager.RemoveFromPostDrawQueue(0, ScienceDraw);
-            }
-            if (counter == 0)
             {
                 RenderingManager.RemoveFromPostDrawQueue(0, ScienceDraw);
             }
@@ -188,7 +217,7 @@ namespace SpaceRace
                     if (GUILayout.Button(crew.name, HighLogic.Skin.button))
                     {
                         ScienceProject project = new ScienceProject();
-                        project = SRScience.researchProjects.FirstOrDefault(p => p.TechNode == nodeBuffer.techID);
+                        project = researchProjects.FirstOrDefault(p => p.TechNode == nodeBuffer.techID);
                         SRScience.StartResearch(crew.name, SRScience.CalcTime(crew.experienceLevel, project.Cost), project.TechNode, true);
                         crew.rosterStatus = ProtoCrewMember.RosterStatus.Assigned;
                         RenderingManager.RemoveFromPostDrawQueue(0, AssignKerbDraw);
