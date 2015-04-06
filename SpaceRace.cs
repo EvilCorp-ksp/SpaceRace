@@ -23,12 +23,14 @@ namespace SpaceRace
         private Rect kerbalDetails = new Rect(200, 200, 400, 275);
         private Rect scienceProjects = new Rect(Screen.width / 2 - 200, Screen.height / 2 - 100, 400, 200);
         private Rect assignKerbal = new Rect(Screen.width / 2 - 100, Screen.height / 2 - 100, 200, 200);
+        private Rect pickSim = new Rect(Screen.width / 2 - 100, Screen.height / 2 - 100, 200, 200);
         private ProtoCrewMember kerbCrew;
         public static SpaceRaceMain Instance;
         private ScienceProject nodeBuffer;
         List<ProtoCrewMember> crewMembers = new List<ProtoCrewMember>();
         public List<ScienceProject> researchProjects = new List<ScienceProject>();
         public static List<Simulation> simulations = new List<Simulation>();
+        public int simIndex = 0;
         Vector2 scrollPositionName = Vector2.zero;
         Vector2 scrollPositionENG = Vector2.zero;
         Vector2 scrollPositionRES = Vector2.zero;
@@ -200,6 +202,31 @@ namespace SpaceRace
             assignKerbal = GUILayout.Window(98351, assignKerbal, AssignKerbal, "Assign Kerbal to project", HighLogic.Skin.window);
         }
 
+        private void SimulationDraw()
+        {
+            pickSim = GUILayout.Window(76523, pickSim, PickSim, "Pick Mission Simulation", HighLogic.Skin.window);
+        }
+
+        private void PickSim(int windowID)
+        {
+            GUILayout.BeginVertical();
+            scrollPositionRES = GUILayout.BeginScrollView(scrollPositionRES, false, true);
+            foreach (Simulation sim in simulations)
+            {
+                if (GUILayout.Button(sim.description, HighLogic.Skin.button))
+                {
+                    simIndex = simulations.IndexOf(sim);
+                    RenderingManager.RemoveFromPostDrawQueue(0, SimulationDraw);
+                }
+            }
+            GUILayout.EndScrollView();
+            if (GUILayout.Button("Close", HighLogic.Skin.button))
+            {
+                RenderingManager.RemoveFromPostDrawQueue(0, SimulationDraw);
+            }
+            GUILayout.EndVertical();
+        }
+
         private void AssignKerbal(int windowID)
         {
             GUILayout.BeginVertical();
@@ -297,7 +324,7 @@ namespace SpaceRace
 
         private void TrainingDraw()
         {
-            trainingWindow = GUILayout.Window(87465, trainingWindow, TrainingWindow, "Training Center");
+            trainingWindow = GUILayout.Window(87465, trainingWindow, TrainingWindow, "Training Center", HighLogic.Skin.window);
         }
 
         private void TrainingWindow(int windowId)
@@ -312,7 +339,7 @@ namespace SpaceRace
                GUILayout.Label("Level " + k.experienceLevel.ToString(), GUILayout.Width(60));
                GUILayout.Label(k.experienceTrait.TypeName, GUILayout.Width(60));
                GUILayout.FlexibleSpace();
-               if (GUILayout.Button("Details", GUILayout.Width(50)))
+               if (GUILayout.Button("Details", HighLogic.Skin.button, GUILayout.Width(50)))
                {
                    kerbCrew = k;
                    RenderingManager.AddToPostDrawQueue(0, KerbDraw);
@@ -374,12 +401,16 @@ namespace SpaceRace
                 GUILayout.Label("Mission Simulation: " + t);
                 if (Funding.Instance.Funds >= t)
                 {
+                    if (GUILayout.Button(simulations[simIndex].description, HighLogic.Skin.button))
+                    {
+                        RenderingManager.AddToPostDrawQueue(0, SimulationDraw);
+                    }
                     if (GUILayout.Button("Train", HighLogic.Skin.button))
                     {
-                        //kerbCrew.experienceLevel += 1;
-                        //SRTraining.MissionSim(kerbCrew.name);
-                        //kerbCrew.ArchiveFlightLog();
-                        //Funding.Instance.AddFunds(-t, 0);
+                        SRTraining.MissionSim(simulations[simIndex], kerbCrew.name);
+                        kerbCrew.ArchiveFlightLog();
+                        Funding.Instance.AddFunds(-t, 0);
+                        simIndex = 0;
                     }
                 }
                 else if (Funding.Instance.Funds < t)
