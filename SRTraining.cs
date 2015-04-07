@@ -5,82 +5,40 @@ using System.Text;
 
 namespace SpaceRace
 {
-    public static class SRTraining
+    public class SRTraining
     {
-        public static void TradeSchool(string name)
-         {
-             foreach (ProtoCrewMember c in HighLogic.CurrentGame.CrewRoster.Crew)
-             {
-                 
-                 if (c.name == name)
-                 {
-                     FlightLog.Entry flight = new FlightLog.Entry(0, FlightLog.EntryType.Flight, "Jool");
-                     c.careerLog.AddEntry(flight);
-                     //if (c.experience < 2)
-                     //{
-                     //    c.experience = 2;
-                     //    c.experienceLevel = 1;
-                     //}
-                     //else if (c.experience >= 2 && c.experience < 8)
-                     //{
-                     //    c.experience = 8;
-                     //    c.experienceLevel = 2;
-                     //}
-                     //else if (c.experience >= 8 && c.experience < 16)
-                     //{
-                     //    c.experience = 16;
-                     //    c.experienceLevel = 3;
-                     //}
-                     //else if (c.experience >= 16 && c.experience < 32)
-                     //{
-                     //    c.experience = 32;
-                     //    c.experienceLevel = 4;
-                     //}
-                     //else if (c.experience >= 32 && c.experience < 64)
-                     //{
-                     //    c.experience = 64;
-                     //    c.experienceLevel = 5;
-                     //}
-                 }
-             }
-         }
-
-         public static void AddXP(string name, float xp)
+        public static void MissionSim(Simulation sim, string name)
         {
             foreach (ProtoCrewMember c in HighLogic.CurrentGame.CrewRoster.Crew)
             {
                 if (c.name == name)
                 {
-                    c.experience += xp;
-                    if (c.experience < 2)
-                    {
-                        c.experienceLevel = 0;
-                    }
-                    else if (c.experience >= 2 && c.experience < 8)
-                    {
-                        c.experienceLevel = 1;
-                    }
-                    else if (c.experience >= 8 && c.experience < 16)
-                    {
-                        c.experienceLevel = 2;
-                    }
-                    else if (c.experience >= 16 && c.experience < 32)
-                    {
-                        c.experienceLevel = 3;
-                    }
-                    else if (c.experience >= 32 && c.experience < 64)
-                    {
-                        c.experienceLevel = 4;
-                    }
-                    else if (c.experience >= 64)
-                    {
-                        c.experienceLevel = 5;
-                    }
-
+                    FlightLog.Entry flight = new FlightLog.Entry(0, sim.type, sim.body);
+                    c.careerLog.AddEntry(flight);
                 }
             }
         }
+
+        public static void BuildList()
+        {
+            SpaceRaceMain.simulations.Clear();
+            SpaceRaceMain.simulations.Add(new Simulation { body = "Kerbin", type = FlightLog.EntryType.Flight });
+            SpaceRaceMain.simulations.Add(new Simulation { body = "Kerbin", type = FlightLog.EntryType.Orbit });
+            SpaceRaceMain.simulations.Add(new Simulation { body = "Kerbin", type = FlightLog.EntryType.Land });
+            SpaceRaceMain.simulations.Add(new Simulation { body = "Mun", type = FlightLog.EntryType.Flight });
+            SpaceRaceMain.simulations.Add(new Simulation { body = "Mun", type = FlightLog.EntryType.Orbit });
+            SpaceRaceMain.simulations.Add(new Simulation { body = "Mun", type = FlightLog.EntryType.Land });
+            SpaceRaceMain.simulations.Add(new Simulation { body = "Minmus", type = FlightLog.EntryType.Flight });
+            SpaceRaceMain.simulations.Add(new Simulation { body = "Minmus", type = FlightLog.EntryType.Orbit });
+            SpaceRaceMain.simulations.Add(new Simulation { body = "Minmus", type = FlightLog.EntryType.Land });
+        }
+}
+    public class Simulation
+    {
+        public string body { get; set; }
+        public FlightLog.EntryType type { get; set; }
     }
 
-   
+    
+  
 }
