@@ -28,7 +28,7 @@ namespace SpaceRace
         public static SpaceRaceMain Instance;
         private ScienceProject nodeBuffer;
         List<ProtoCrewMember> crewMembers = new List<ProtoCrewMember>();
-        public List<ScienceProject> researchProjects = new List<ScienceProject>();
+        public static List<ScienceProject> researchProjects = new List<ScienceProject>();
         public static List<Simulation> simulations = new List<Simulation>();
         public int simIndex = 0;
         Vector2 scrollPositionName = Vector2.zero;

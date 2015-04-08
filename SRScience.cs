@@ -12,7 +12,7 @@ namespace SpaceRace
         public static void BuildProjectList()
         {
             SRUtilities.researchList.Clear();
-            foreach (ScienceProject project in SpaceRaceMain.Instance.researchProjects)
+            foreach (ScienceProject project in SpaceRaceMain.researchProjects)
             {
                 SRUtilities.researchList.Add(project.TechName + ";" + project.techID + ";" + project.KerbalAssigned + /*";" + project.UTTimeStarted + */";" + project.UTTimeCompleted.ToString() + ";" + project.InProgress + ";" + project.Cost);
                 Debug.Log("SpaceRace: Added to research list for saving: " + project.TechName + ";" + project.techID + ";" + project.KerbalAssigned + ";" + project.UTTimeCompleted.ToString() + ";" + project.InProgress + ";" + project.Cost);
@@ -40,7 +40,7 @@ namespace SpaceRace
             Debug.Log("SpaceRace: Loaded Cost");
             Debug.Log("SpaceRace: Loading science project to list from file.");
             Debug.Log("SpaceRace: Project " + project.TechName + " loaded. Kerbal assigned: " + crew.name + ".");
-            SpaceRaceMain.Instance.researchProjects.Add(project);
+            SpaceRaceMain.researchProjects.Add(project);
             Debug.Log("Added project to projects list");
             crew.rosterStatus = ProtoCrewMember.RosterStatus.Assigned;
             Debug.Log("Re-assigned crewmember to project");
@@ -51,7 +51,7 @@ namespace SpaceRace
         public static bool CheckResearchProject(string id)
         {
             bool check = false;
-            foreach (ScienceProject project in SpaceRaceMain.Instance.researchProjects)
+            foreach (ScienceProject project in SpaceRaceMain.researchProjects)
             {
                 if (project.techID == id)
                 {
@@ -63,20 +63,20 @@ namespace SpaceRace
 
         public static void CheckCompletedProjects()
         {
-            foreach (ScienceProject project in SpaceRaceMain.Instance.researchProjects)
+            foreach (ScienceProject project in SpaceRaceMain.researchProjects)
             {
                 if (Planetarium.GetUniversalTime() >= project.UTTimeCompleted)
                 {
                     Unlock(project);
                     ReassignCrew(project);
-                    SpaceRaceMain.Instance.researchProjects.Remove(project);
+                    SpaceRaceMain.researchProjects.Remove(project);
                 }
             }
         }
 
         public static void StartResearch(string staff, double timeending, string techid, bool inprogress)
         {
-            foreach (ScienceProject p in SpaceRaceMain.Instance.researchProjects)
+            foreach (ScienceProject p in SpaceRaceMain.researchProjects)
             {
                 if (p.techID == techid)
                 {
@@ -101,13 +101,13 @@ namespace SpaceRace
  
         public static void CompleteResearchProject(string staff, string tech, ProtoTechNode node)
         {
-            ScienceProject project = SpaceRaceMain.Instance.researchProjects.FirstOrDefault(p => p.techID == tech);
+            ScienceProject project = SpaceRaceMain.researchProjects.FirstOrDefault(p => p.techID == tech);
             ProtoCrewMember crew = HighLogic.CurrentGame.CrewRoster.Crew.FirstOrDefault(c => c.name == staff);
             project.state = RDTech.State.Available;
             ResearchAndDevelopment.Instance.SetTechState(project.techID, ResearchAndDevelopment.Instance.GetTechState(project.techID));
             crew.rosterStatus = ProtoCrewMember.RosterStatus.Available;
-            int index = SpaceRaceMain.Instance.researchProjects.FindIndex(i => i.techID == tech);
-            SpaceRaceMain.Instance.researchProjects.RemoveAt(index);
+            int index = SpaceRaceMain.researchProjects.FindIndex(i => i.techID == tech);
+            SpaceRaceMain.researchProjects.RemoveAt(index);
         }
 
         public static void ReassignCrew(ScienceProject project)
