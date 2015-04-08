@@ -150,6 +150,7 @@ namespace SpaceRace
         public bool Completed { get; set; }
         public int Cost { get; set; }
         public string TechName { get; set; }
+        public ProtoTechNode pNode;
         
 
         //public void Lock()

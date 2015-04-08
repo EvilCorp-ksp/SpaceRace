@@ -25,18 +25,14 @@ namespace SpaceRace
                 {
                     ScienceProject project = new ScienceProject();
                     project.TechName = n.GetValue("Title");
-                    Debug.Log("SpaceRace: Loaded title: " + n.GetValue("Title"));
                     project.techID = n.GetValue("techID");
-                    Debug.Log("SpaceRace: Loaded techID: " + n.GetValue("techID"));
                     project.KerbalAssigned = n.GetValue("KerbalAssigned");
-                    Debug.Log("SpaceRace: Loaded KerbalAssigned: " + n.GetValue("KerbalAssigned"));
                     project.UTTimeCompleted = Convert.ToDouble(n.GetValue("UTTimeCompleted"));
-                    Debug.Log("SpaceRace: Loaded UTTimeCompleted:" + Convert.ToDouble(n.GetValue("UTTimeCompleted")));
                     project.InProgress = Boolean.Parse(n.GetValue("InProgress"));
-                    Debug.Log("SpaceRace: Loaded InProgress: " + n.GetValue("InProgress"));
                     project.scienceCost = Convert.ToInt32(n.GetValue("ScienceCost"));
-                    Debug.Log("SpaceRace: Loaded ScienceCost" + n.GetValue("ScienceCost"));
                     project.Completed = Boolean.Parse(n.GetValue("Completed"));
+                    project.pNode = new ProtoTechNode(n.GetNode("TechNode"));
+                    Debug.Log("pNode is " + project.pNode.techID);
 
                     SpaceRaceMain.researchProjects.Add(project);
                 }
@@ -52,7 +48,9 @@ namespace SpaceRace
             {
                 if (project.Completed == false)
                 {
+                    ConfigNode technode = new ConfigNode("TechNode");
                     ConfigNode temp = new ConfigNode("Project");
+                    project.pNode.Save(technode);
                     temp.AddValue("Title", project.TechName);
                     temp.AddValue("techID", project.techID);
                     temp.AddValue("KerbalAssigned", project.KerbalAssigned);
@@ -60,7 +58,8 @@ namespace SpaceRace
                     temp.AddValue("InProgress", project.InProgress);
                     temp.AddValue("ScienceCost", project.scienceCost);
                     temp.AddValue("Completed", project.Completed);
-                    //temp = ConfigNode.CreateConfigFromObject(project, temp);
+
+                    temp.AddNode(technode);
                     cn.AddNode(temp);
                 }
 

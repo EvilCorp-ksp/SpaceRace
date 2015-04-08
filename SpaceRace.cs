@@ -108,7 +108,7 @@ namespace SpaceRace
             if (result.host != null && result.target == RDTech.OperationResult.Successful)
             {
                 result.host.state = RDTech.State.Unavailable;
-                ScienceProject project = new ScienceProject() { partsPurchased = ResearchAndDevelopment.Instance.GetTechState(result.host.techID).partsPurchased, UTTimeCompleted = 9999999999f, KerbalAssigned = "None", techID = result.host.techID, TechName = result.host.title, Cost = result.host.scienceCost, InProgress = false, state = RDTech.State.Unavailable, Completed = false };
+                ScienceProject project = new ScienceProject() { partsPurchased = ResearchAndDevelopment.Instance.GetTechState(result.host.techID).partsPurchased, UTTimeCompleted = 9999999999f, KerbalAssigned = "None", techID = result.host.techID, TechName = result.host.title, Cost = result.host.scienceCost, InProgress = false, state = RDTech.State.Unavailable, Completed = false, pNode = ResearchAndDevelopment.Instance.GetTechState(result.host.techID) };
                 if (SRScience.CheckResearchProject(result.host.techID) == false)
                 {
                     Debug.Log("SpaceRace: Adding science project to list.");
