@@ -46,6 +46,7 @@ namespace SpaceRace
 
         public void LoadData()
         {
+
             researchList.Clear();
             Debug.Log("SpaceRace: Calling LoadData");
             if (File.Exists(SpaceRaceMain.spaceracefolder + "RnDList"))
