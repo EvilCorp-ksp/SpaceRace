@@ -108,7 +108,7 @@ namespace SpaceRace
             if (result.host != null && result.target == RDTech.OperationResult.Successful)
             {
                 result.host.state = RDTech.State.Unavailable;
-                ScienceProject project = new ScienceProject() { partsPurchased = ResearchAndDevelopment.Instance.GetTechState(result.host.techID).partsPurchased, UTTimeCompleted = 9999999999f, KerbalAssigned = "", techID = result.host.techID, TechName = result.host.title, Cost = result.host.scienceCost, InProgress = false, state = RDTech.State.Unavailable };
+                ScienceProject project = new ScienceProject() { partsPurchased = ResearchAndDevelopment.Instance.GetTechState(result.host.techID).partsPurchased, UTTimeCompleted = 9999999999f, KerbalAssigned = "None", techID = result.host.techID, TechName = result.host.title, Cost = result.host.scienceCost, InProgress = false, state = RDTech.State.Unavailable, Completed = false };
                 if (SRScience.CheckResearchProject(result.host.techID) == false)
                 {
                     Debug.Log("SpaceRace: Adding science project to list.");
@@ -168,19 +168,29 @@ namespace SpaceRace
             scrollPositionRES = GUILayout.BeginScrollView(scrollPositionRES, HighLogic.Skin.scrollView);
             foreach (ScienceProject project in researchProjects)
             {
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button(project.TechName, HighLogic.Skin.button, GUILayout.Width(150)))
+                if (project.Completed == false)
                 {
-                    
+                    GUILayout.BeginHorizontal();
+                    if (GUILayout.Button(project.TechName, HighLogic.Skin.button, GUILayout.Width(150)))
+                    {
+
+                    }
+                    if (GUILayout.Button(project.KerbalAssigned, HighLogic.Skin.button, GUILayout.Width(150), GUILayout.MinWidth(150), GUILayout.MaxWidth(150)))
+                    {
+                        nodeBuffer = project;
+                        RenderingManager.AddToPostDrawQueue(0, AssignKerbDraw);
+                    }
+                    GUILayout.FlexibleSpace();
+                    if (project.InProgress == true)
+                    {
+                        GUILayout.Label(FormatTime(project.UTTimeCompleted - Planetarium.GetUniversalTime()), HighLogic.Skin.label, GUILayout.Width(100));
+                    }
+                    else
+                    {
+                        GUILayout.Label("0:0:0:0", HighLogic.Skin.label, GUILayout.Width(100));
+                    }
+                    GUILayout.EndHorizontal();
                 }
-                if (GUILayout.Button(project.KerbalAssigned, HighLogic.Skin.button, GUILayout.Width(150)))
-                {
-                    nodeBuffer = project;
-                    RenderingManager.AddToPostDrawQueue(0, AssignKerbDraw);
-                }
-                GUILayout.FlexibleSpace();
-                GUILayout.Label(FormatTime(project.UTTimeCompleted - Planetarium.GetUniversalTime()), HighLogic.Skin.label, GUILayout.Width(100));
-                GUILayout.EndHorizontal();
             }
             
             GUILayout.EndScrollView();
@@ -389,7 +399,7 @@ namespace SpaceRace
             GUILayout.BeginHorizontal();
             GUILayout.BeginVertical();
             GUILayout.Label(kerbCrew.name);
-            GUILayout.Label("\nLevel " + kerbCrew.experience + " " + kerbCrew.experienceTrait.TypeName,HighLogic.Skin.label ,GUILayout.ExpandWidth(true));
+            GUILayout.Label("\nLevel " + kerbCrew.experienceLevel + " " + kerbCrew.experienceTrait.TypeName,HighLogic.Skin.label ,GUILayout.ExpandWidth(true));
             GUILayout.Label(kerbCrew.experienceTrait.Description);
             GUILayout.Label("Traits: ");
             GUILayout.Label(kerbCrew.experienceTrait.DescriptionEffects);
@@ -422,8 +432,8 @@ namespace SpaceRace
             {
                 GUILayout.Label("Maximum level, no more \ntraining possible", HighLogic.Skin.label);
             }
-            GUILayout.Label("Traits: ", HighLogic.Skin.label);
-            GUILayout.Label(kerbCrew.experienceTrait.DescriptionEffects, HighLogic.Skin.label);
+            //GUILayout.Label("Traits: ", HighLogic.Skin.label);
+            //GUILayout.Label(kerbCrew.experienceTrait.DescriptionEffects, HighLogic.Skin.label);
             GUILayout.EndVertical();
             GUILayout.EndHorizontal();
             GUILayout.FlexibleSpace();

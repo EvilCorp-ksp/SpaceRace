@@ -36,6 +36,8 @@ namespace SpaceRace
                     Debug.Log("SpaceRace: Loaded InProgress: " + n.GetValue("InProgress"));
                     project.scienceCost = Convert.ToInt32(n.GetValue("ScienceCost"));
                     Debug.Log("SpaceRace: Loaded ScienceCost" + n.GetValue("ScienceCost"));
+                    project.Completed = Boolean.Parse(n.GetValue("Completed"));
+
                     SpaceRaceMain.researchProjects.Add(project);
                 }
             }
@@ -48,15 +50,20 @@ namespace SpaceRace
             ConfigNode cn = new ConfigNode("ScienceProjects");
             foreach (ScienceProject project in SpaceRaceMain.researchProjects)
             {
-                ConfigNode temp = new ConfigNode("Project");
-                temp.AddValue("Title", project.TechName);
-                temp.AddValue("techID", project.techID);
-                temp.AddValue("KerbalAssigned", project.KerbalAssigned);
-                temp.AddValue("UTTimeCompleted", project.UTTimeCompleted);
-                temp.AddValue("InProgress", project.InProgress);
-                temp.AddValue("ScienceCost", project.scienceCost);
-                //temp = ConfigNode.CreateConfigFromObject(project, temp);
-                cn.AddNode(temp);
+                if (project.Completed == false)
+                {
+                    ConfigNode temp = new ConfigNode("Project");
+                    temp.AddValue("Title", project.TechName);
+                    temp.AddValue("techID", project.techID);
+                    temp.AddValue("KerbalAssigned", project.KerbalAssigned);
+                    temp.AddValue("UTTimeCompleted", project.UTTimeCompleted);
+                    temp.AddValue("InProgress", project.InProgress);
+                    temp.AddValue("ScienceCost", project.scienceCost);
+                    temp.AddValue("Completed", project.Completed);
+                    //temp = ConfigNode.CreateConfigFromObject(project, temp);
+                    cn.AddNode(temp);
+                }
+
             }
             node.AddNode(cn);
             //SaveData();

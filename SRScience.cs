@@ -65,11 +65,11 @@ namespace SpaceRace
         {
             foreach (ScienceProject project in SpaceRaceMain.researchProjects)
             {
-                if (Planetarium.GetUniversalTime() >= project.UTTimeCompleted)
+                if (Planetarium.GetUniversalTime() >= project.UTTimeCompleted && project.Completed == false)
                 {
                     Unlock(project);
                     ReassignCrew(project);
-                    SpaceRaceMain.researchProjects.Remove(project);
+                    //SpaceRaceMain.researchProjects.Remove(project);
                 }
             }
         }
@@ -136,6 +136,7 @@ namespace SpaceRace
             ProtoTechNode node = ResearchAndDevelopment.Instance.GetTechState(project.techID);
             node.state = RDTech.State.Available;
             ResearchAndDevelopment.Instance.SetTechState(project.techID, ResearchAndDevelopment.Instance.GetTechState(project.techID));
+            project.Completed = true;
             Debug.Log("SpaceRace: Unlocked project.");
         }
     }
@@ -146,6 +147,7 @@ namespace SpaceRace
         public double UTTimeCompleted { get; set; } //Exact time project will complete and the part and Kerbal assigned will both become available.
         //public double UTTimeStarted { get; set; }
         public bool InProgress { get; set; } //Boolean for progress status.
+        public bool Completed { get; set; }
         public int Cost { get; set; }
         public string TechName { get; set; }
         
