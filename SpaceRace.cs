@@ -391,9 +391,7 @@ namespace SpaceRace
             GUILayout.BeginVertical();
             GUILayout.Label(kerbCrew.name);
             GUILayout.Label("\nLevel " + kerbCrew.experienceLevel + " " + kerbCrew.experienceTrait.TypeName,HighLogic.Skin.label ,GUILayout.ExpandWidth(true));
-#if DEBUG
-            GUILayout.Label("XP " + kerbCrew.experience, HighLogic.Skin.label);
-#endif
+            GUILayout.Label("Current XP " + kerbCrew.experience, HighLogic.Skin.label);
             GUILayout.Label(kerbCrew.experienceTrait.Description);
             GUILayout.Label("Traits: ");
             GUILayout.Label(kerbCrew.experienceTrait.DescriptionEffects);
