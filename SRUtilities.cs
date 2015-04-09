@@ -23,9 +23,19 @@ namespace SpaceRace
             {
                 SRRival.rival = SRRival.DecodeRival(rcn);
             }
-            if (rcn == null)
+            else if (rcn == null)
             {
                 SRRival.rival = SRRival.CreateNewRival();
+            }
+
+            ConfigNode evcn = node.GetNode("EventList");
+            if (evcn != null)
+            {
+                SRRival.eventList = SRRival.DecodeEvents(evcn);
+            }
+            else if (evcn == null)
+            {
+                SRRival.BuildEventList();
             }
 
             ConfigNode spcn = node.GetNode("ScienceProjects");
@@ -75,6 +85,7 @@ namespace SpaceRace
             base.OnSave(node);
 
             node.AddNode(SRRival.EncodeRival(SRRival.rival));
+            node.AddNode(SRRival.EncodeEvents(SRRival.eventList));
 
             ConfigNode spcn = new ConfigNode("ScienceProjects");
             foreach (ScienceProject project in SpaceRaceMain.researchProjects)
@@ -118,48 +129,7 @@ namespace SpaceRace
             
         }
 
-        //public void SaveData()
-        //{
-        //    Debug.Log("SpaceRace: Firing SaveData.");
 
-        //    Debug.Log("SpaceRace: Firing BuildProjectList from SaveData");
-        //    SRScience.BuildProjectList();
-        //    using (StreamWriter writer = new StreamWriter(SpaceRaceMain.spaceracefolder + "RnDList"))
-        //    {
-        //        foreach (string line in researchList)
-        //        {
-        //            writer.WriteLine(line);
-        //            Debug.Log("SpaceRace: SaveData - Writing line: " + line);
-        //        }
-        //        writer.Close();
-        //    }
-        //}
-
-        //public void LoadData()
-        //{
-
-        //    researchList.Clear();
-        //    Debug.Log("SpaceRace: Calling LoadData");
-        //    if (File.Exists(SpaceRaceMain.spaceracefolder + "RnDList"))
-        //    {
-        //        using (StreamReader reader = new StreamReader(SpaceRaceMain.spaceracefolder + "RnDList"))
-        //        {
-        //            string line = "";
-        //            while ((line = reader.ReadLine()) != null)
-        //            {
-        //                researchList.Add(line);
-        //            }
-        //            Debug.Log(String.Format("SpaceRace: Loaded {0} lines into researchList", researchList.Count));
-        //            reader.Close();
-        //            SpaceRaceMain.lastLoaded = true;
-        //        }
-        //        SpaceRaceMain.researchProjects.Clear();
-        //        foreach (string line in SRUtilities.researchList)
-        //        {
-        //            SRScience.RebuildProjects(line);
-        //        }
-        //    }
-        //}
     }
 }
 

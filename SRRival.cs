@@ -13,16 +13,18 @@ namespace SpaceRace
         public static List<Events> eventList = new List<Events>();
         public static Rival rival = new Rival();
         
-        public static void GenerateEventList()
+        public static void BuildEventList()
         {
             eventList.Clear();
         }
 
-        public Event PickEvent(string type)
+        public Events PickEvent(string type)
         {
-            Event ev = new Event();
+            List<Events> randomEvent = eventList.FindAll(e => e.Used == false || e.Repeatable == true);
+            int result = UnityEngine.Random.Range(0, randomEvent.Count());
 
-            return ev;
+            randomEvent[result].Used = true;
+            return randomEvent[result];
         }
 
         public static void MinorEvent()
@@ -35,7 +37,6 @@ namespace SpaceRace
                     rival.PreviousMinor = Planetarium.GetUniversalTime();
                     rival.NextMinor = Planetarium.GetUniversalTime() + UnityEngine.Random.Range(216000, 864000);
                 }
-
             }
         }
 
@@ -49,7 +50,6 @@ namespace SpaceRace
                     rival.PreviousMajor =  Math.Floor(Planetarium.GetUniversalTime() / 21600);
                     rival.NextMinor = Math.Floor(Planetarium.GetUniversalTime() / 21600) + 106;
                 }
-
             }
         }
 
@@ -115,6 +115,30 @@ namespace SpaceRace
             return cn;
         }
 
+        public static ConfigNode EncodeEvents(List<Events> list)
+        {
+            ConfigNode cn = new ConfigNode("EventList");
+            foreach (Events entry in list)
+            {
+                ConfigNode cnEvent = new ConfigNode("Event");
+                cnEvent.AddValue("Name", entry.Name);
+                cnEvent.AddValue("Science", entry.Science);
+                cnEvent.AddValue("Funds", entry.Funds);
+                cnEvent.AddValue("Reputation", entry.Reputation);
+                cnEvent.AddValue("FlavorText", entry.FlavorText);
+                cnEvent.AddValue("CelestialBody", entry.CelestialBody);
+                cnEvent.AddValue("techID", entry.techID);
+                cnEvent.AddValue("Kerbal", entry.Kerbal);
+                cnEvent.AddValue("PartName", entry.PartName);
+                cnEvent.AddValue("Type", entry.Type);
+                cnEvent.AddValue("Repeatable", entry.Repeatable);
+                cnEvent.AddValue("Used", entry.Used);
+
+                cn.AddNode(cnEvent);
+            }
+            return cn;
+        }
+
         public static Rival DecodeRival(ConfigNode node)
         {
             ConfigNode cn = node.GetNode("Rival");
@@ -133,6 +157,32 @@ namespace SpaceRace
             {
                 temp.Staff.Add(s);
             }
+            return temp;
+        }
+
+        public static List<Events> DecodeEvents(ConfigNode node)
+        {
+            ConfigNode cn = node.GetNode("EventList");
+            List<Events> temp = new List<Events>();
+            foreach (ConfigNode cnEvent in cn.GetNodes("Event"))
+            {
+                temp.Add(new Events()
+                {
+                    Name = cnEvent.GetValue("Name"),
+                    Science = Convert.ToInt32(cnEvent.GetValue("Science")),
+                    Funds = Convert.ToDouble(cnEvent.GetValue("Funds")),
+                    Reputation = Convert.ToDouble(cnEvent.GetValue("Reputation")),
+                    FlavorText = cnEvent.GetValue("FlavorText"),
+                    CelestialBody = cnEvent.GetValue("CelestialBody"),
+                    techID = cnEvent.GetValue("techID"),
+                    Kerbal = cnEvent.GetValue("Kerbal"),
+                    PartName = cnEvent.GetValue("PartName"),
+                    Type = (EventType)Enum.Parse(typeof(EventType), cnEvent.GetValue("Type")),
+                    Repeatable = Boolean.Parse(cnEvent.GetValue("Repeatable")),
+                    Used = Boolean.Parse(cnEvent.GetValue("Used"))
+                });
+            }
+
             return temp;
         }
 
@@ -171,7 +221,33 @@ namespace SpaceRace
 
     public class Events
     {
+        public bool Repeatable { get; set; }
+        public bool Used { get; set; }
+        public string Name { get; set; }
+        public string FlavorText { get; set; }
+        public EventType Type { get; set; }
+        public string CelestialBody { get; set; }
+        public int Science { get; set; }
+        public double Funds { get; set; }
+        public double Reputation { get; set; }
+        public string techID { get; set; }
+        public string Kerbal { get; set; }
+        public string PartName { get; set; }
+    }
 
+    public enum EventType
+    {
+        TextOnly = 0,
+        BonusFunds = 1,
+        BonusScience = 2,
+        Fine = 3,
+        Contract = 4,
+        Headhunt = 5,
+        LostStaff = 6,
+        MajorMission = 7,
+        Catastrophe = 8,
+        PlayerStealsScience = 9,
+        PlayerStealsPlans = 10
     }
 
     public class Rival
