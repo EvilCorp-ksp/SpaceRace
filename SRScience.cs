@@ -65,11 +65,11 @@ namespace SpaceRace
         {
             foreach (ScienceProject project in SpaceRaceMain.researchProjects)
             {
-                if (Planetarium.GetUniversalTime() >= project.UTTimeCompleted)
+                if (Planetarium.GetUniversalTime() >= project.UTTimeCompleted && project.Completed == false)
                 {
                     Unlock(project);
                     ReassignCrew(project);
-                    SpaceRaceMain.researchProjects.Remove(project);
+                    //SpaceRaceMain.researchProjects.Remove(project);
                 }
             }
         }
@@ -98,18 +98,6 @@ namespace SpaceRace
             return result;
         }
 
- 
-        public static void CompleteResearchProject(string staff, string tech, ProtoTechNode node)
-        {
-            ScienceProject project = SpaceRaceMain.researchProjects.FirstOrDefault(p => p.techID == tech);
-            ProtoCrewMember crew = HighLogic.CurrentGame.CrewRoster.Crew.FirstOrDefault(c => c.name == staff);
-            project.state = RDTech.State.Available;
-            ResearchAndDevelopment.Instance.SetTechState(project.techID, ResearchAndDevelopment.Instance.GetTechState(project.techID));
-            crew.rosterStatus = ProtoCrewMember.RosterStatus.Available;
-            int index = SpaceRaceMain.researchProjects.FindIndex(i => i.techID == tech);
-            SpaceRaceMain.researchProjects.RemoveAt(index);
-        }
-
         public static void ReassignCrew(ScienceProject project)
         {
             foreach (ProtoCrewMember crew in HighLogic.CurrentGame.CrewRoster.Crew)
@@ -123,19 +111,16 @@ namespace SpaceRace
 
         public static void Lock(ScienceProject project)
         {
-            project.state = RDTech.State.Unavailable;
-            ProtoTechNode node = ResearchAndDevelopment.Instance.GetTechState(project.techID);
-            node.state = RDTech.State.Unavailable;
-            ResearchAndDevelopment.Instance.SetTechState(project.techID, ResearchAndDevelopment.Instance.GetTechState(project.techID));
+            project.pNode.state = RDTech.State.Unavailable;
+            ResearchAndDevelopment.Instance.SetTechState(project.techID, project.pNode);
             Debug.Log("SpaceRace: Locked project.");
         }
 
         public static void Unlock(ScienceProject project)
         {
-            project.state = RDTech.State.Available;
-            ProtoTechNode node = ResearchAndDevelopment.Instance.GetTechState(project.techID);
-            node.state = RDTech.State.Available;
-            ResearchAndDevelopment.Instance.SetTechState(project.techID, ResearchAndDevelopment.Instance.GetTechState(project.techID));
+            project.pNode.state = RDTech.State.Available;
+            ResearchAndDevelopment.Instance.SetTechState(project.techID, project.pNode);
+            project.Completed = true;
             Debug.Log("SpaceRace: Unlocked project.");
         }
     }
@@ -146,8 +131,10 @@ namespace SpaceRace
         public double UTTimeCompleted { get; set; } //Exact time project will complete and the part and Kerbal assigned will both become available.
         //public double UTTimeStarted { get; set; }
         public bool InProgress { get; set; } //Boolean for progress status.
+        public bool Completed { get; set; }
         public int Cost { get; set; }
         public string TechName { get; set; }
+        public ProtoTechNode pNode;
         
 
         //public void Lock()
