@@ -27,9 +27,11 @@ namespace SpaceRace
         private ProtoCrewMember kerbCrew;
         public static SpaceRaceMain Instance;
         private ScienceProject nodeBuffer;
+        private EngineeringProject epBuffer;
         List<ProtoCrewMember> crewMembers = new List<ProtoCrewMember>();
         public static List<ScienceProject> researchProjects = new List<ScienceProject>();
         public static List<Simulation> simulations = new List<Simulation>();
+        public static List<EngineeringProject> engineeringProjects = new List<EngineeringProject>();
         public int simIndex = 0;
         Vector2 scrollPositionName = Vector2.zero;
         Vector2 scrollPositionENG = Vector2.zero;
@@ -38,11 +40,12 @@ namespace SpaceRace
         public static bool lastLoaded = false;
         public int currentScience = 0;
 
-        void Update()
+        void FixedUpdate()
         {
             if (HighLogic.LoadedSceneHasPlanetarium)
             {
                 SRScience.CheckCompletedProjects();
+                SREngineering.CheckCompletedProjects();
             }
         }
 
@@ -76,16 +79,16 @@ namespace SpaceRace
                 ScreenMessages.PostScreenMessage("Technology required is still being researched!", 5.0f, ScreenMessageStyle.UPPER_LEFT);
                 Funding.Instance.AddFunds(ap.entryCost, TransactionReasons.RnDPartPurchase);
                 sp.partsPurchased.Remove(ap);
-                sp.state = RDTech.State.Unavailable;
+                //sp.state = RDTech.State.Unavailable;
                 ResearchAndDevelopment.Instance.SetTechState(sp.techID, ResearchAndDevelopment.Instance.GetTechState(sp.techID));
             }
             else
             {
-                SREngineering.EngineeringProject project = new SREngineering.EngineeringProject();
-                project = SREngineering.engineeringProjects.FirstOrDefault(p => p.Part == ap);
+                EngineeringProject project = new EngineeringProject();
+                project = engineeringProjects.FirstOrDefault(p => p.Part == ap);
                 if (project == null)
                 {
-                    SREngineering.engineeringProjects.Add(new SREngineering.EngineeringProject { Part = ap, Category = ap.category });
+                    engineeringProjects.Add(new EngineeringProject { Part = ap, Category = ap.category, Completed = false, InProgress = false, KerbalAssigned = "None", Name = ap.name, UTTimeCompleted = 99999999999 });
                 }
             }
             SREngineering.HideParts();
@@ -97,7 +100,10 @@ namespace SpaceRace
             Debug.Log(researchProjects.Count + " projects in the list");
             foreach (ScienceProject project in researchProjects)
             {
-                SRScience.Lock(project);
+                if (project.Completed != true)
+                {
+                    SRScience.Lock(project);
+                }
             }
         }
 
@@ -219,6 +225,11 @@ namespace SpaceRace
             assignKerbal = GUILayout.Window(98351, assignKerbal, AssignKerbal, "Assign Kerbal to project", HighLogic.Skin.window);
         }
 
+        private void AssignKerbEngDraw()
+        {
+            assignKerbal = GUILayout.Window(23561, assignKerbal, AssignKerbalEngineer, "Assign Kerbal to project", HighLogic.Skin.window);
+        }
+
         private void SimulationDraw()
         {
             pickSim = GUILayout.Window(76523, pickSim, PickSim, "Pick Mission Simulation", HighLogic.Skin.window);
@@ -262,6 +273,38 @@ namespace SpaceRace
                             SRScience.StartResearch(crew.name, SRScience.CalcTime(crew.experienceLevel, project.Cost), project.techID, true);
                             crew.rosterStatus = ProtoCrewMember.RosterStatus.Assigned;
                             RenderingManager.RemoveFromPostDrawQueue(0, AssignKerbDraw);
+                        }
+                    }
+                }
+            }
+
+
+            GUILayout.EndScrollView();
+            if (GUILayout.Button("Close", HighLogic.Skin.button))
+            {
+                RenderingManager.RemoveFromPostDrawQueue(0, AssignKerbDraw);
+            }
+            GUILayout.EndVertical();
+        }
+
+        private void AssignKerbalEngineer(int windowID)
+        {
+            GUILayout.BeginVertical();
+            scrollPositionRES = GUILayout.BeginScrollView(scrollPositionRES, false, true);
+            foreach (ProtoCrewMember crew in HighLogic.CurrentGame.CrewRoster.Crew)
+            {
+                if (crew.rosterStatus == ProtoCrewMember.RosterStatus.Available && crew.experienceTrait.TypeName == "Engineer")
+                {
+                    if (GUILayout.Button(crew.name, HighLogic.Skin.button))
+                    {
+                        EngineeringProject project = new EngineeringProject();
+                        project = engineeringProjects.FirstOrDefault(p => p.Name == epBuffer.Name);
+
+                        if (project.InProgress == false)
+                        {
+                            SREngineering.StartEngineeringProject(crew.name, project.Part.entryCost, project.Part, true);
+                            crew.rosterStatus = ProtoCrewMember.RosterStatus.Assigned;
+                            RenderingManager.RemoveFromPostDrawQueue(0, AssignKerbEngDraw);
                         }
                     }
                 }
@@ -328,7 +371,7 @@ namespace SpaceRace
             GameEvents.OnTechnologyResearched.Remove(TriggerResearch);
             GameEvents.onGUIRnDComplexDespawn.Remove(TriggerLock);
             GameEvents.OnPartPurchased.Remove(AddEngineeringProject);
-            if (HighLogic.LoadedSceneHasPlanetarium)
+            if (HighLogic.LoadedSceneHasPlanetarium || HighLogic.LoadedSceneIsEditor || HighLogic.LoadedSceneIsFlight)
             {
                 ApplicationLauncher.Instance.RemoveModApplication(button);
             }
@@ -474,16 +517,47 @@ namespace SpaceRace
         {
             scrollPositionENG = GUILayout.BeginScrollView(scrollPositionENG, false, true);
             GUILayout.BeginVertical();
-            foreach (SREngineering.EngineeringProject project in SREngineering.engineeringProjects)
+            foreach (EngineeringProject project in engineeringProjects)
             {
-                AvailablePart part = PartLoader.LoadedPartsList.FirstOrDefault(p => p.name == project.Part.name);
-                GUILayout.Label(project.Part.name + " " + project.Part.entryCost + " " + project.Part.category.ToString() + " " + project.Category.ToString(), HighLogic.Skin.label);
+                if (project.Completed == false)
+                {
+                    GUILayout.BeginHorizontal();
+                    if (GUILayout.Button(project.Part.title, HighLogic.Skin.button, GUILayout.Width(250)))
+                    {
+
+                    }
+                    if (GUILayout.Button(project.KerbalAssigned, HighLogic.Skin.button, GUILayout.Width(150), GUILayout.MinWidth(150), GUILayout.MaxWidth(150)))
+                    {
+                        epBuffer = project;
+                        RenderingManager.AddToPostDrawQueue(0, AssignKerbEngDraw);
+                    }
+                    GUILayout.FlexibleSpace();
+                    if (project.InProgress == true)
+                    {
+                        GUILayout.Label(FormatTime(project.UTTimeCompleted - Planetarium.GetUniversalTime()), HighLogic.Skin.label, GUILayout.Width(100));
+                    }
+                    else
+                    {
+                        GUILayout.Label("0:0:0:0", HighLogic.Skin.label, GUILayout.Width(100));
+                    }
+                    if (GUILayout.Button("Rush", HighLogic.Skin.button))
+                    {
+                        float cost = Convert.ToSingle(Math.Round((project.UTTimeCompleted - Planetarium.GetUniversalTime()) / 2, 0) + 1);
+                        project.UTTimeCompleted = Planetarium.GetUniversalTime();
+                        Funding.Instance.AddFunds(-cost, TransactionReasons.RnDTechResearch);
+                        Debug.Log("SpaceRace: Rushed project " + project.Name + " for " + cost + " funds");
+                    }
+                    GUILayout.EndHorizontal();
+                }
+                //AvailablePart part = PartLoader.LoadedPartsList.FirstOrDefault(p => p.name == project.Part.name);
+                //GUILayout.Label(project.Part.name + " " + project.Part.entryCost + " " + project.Part.category.ToString() + " " + project.Category.ToString(), HighLogic.Skin.label);
             }
             GUILayout.EndVertical();
             GUILayout.EndScrollView();
             if (GUILayout.Button("Close", HighLogic.Skin.button))
             {
                 RenderingManager.RemoveFromPostDrawQueue(0, EngineeringDraw);
+                RenderingManager.AddToPostDrawQueue(0, OnDraw);
             }
             GUI.skin = HighLogic.Skin;
             GUI.DragWindow();

@@ -17,11 +17,10 @@ namespace SpaceRace
         {
             base.OnLoad(node);
             SpaceRaceMain.researchProjects.Clear();
-            ConfigNode cn = node.GetNode("ScienceProjects");
-            if (cn != null)
+            ConfigNode spcn = node.GetNode("ScienceProjects");
+            if (spcn != null)
             {
-                Debug.Log("SpaceRace: Loaded main ConfigNode");
-                foreach (ConfigNode n in cn.GetNodes("Project"))
+                foreach (ConfigNode n in spcn.GetNodes("ScienceProject"))
                 {
                     ScienceProject project = new ScienceProject();
                     project.TechName = n.GetValue("Title");
@@ -37,19 +36,40 @@ namespace SpaceRace
                     SpaceRaceMain.researchProjects.Add(project);
                 }
             }
-            //LoadData();
+
+            SpaceRaceMain.engineeringProjects.Clear();
+            ConfigNode epcn = node.GetNode("EngineeringProjects");
+            if (epcn != null)
+            {
+                foreach (ConfigNode n in epcn.GetNodes("EngineeringProject"))
+                {
+                    EngineeringProject project = new EngineeringProject();
+                    project.Name = n.GetValue("Name");
+                    project.KerbalAssigned = n.GetValue("KerbalAssigned");
+                    project.UTTimeCompleted = Convert.ToDouble(n.GetValue("UTTimeCompleted"));
+                    Debug.Log("SpaceRace: Loaded EngineeringProject " + project.Name + " with a UTTimeEnding of " + project.UTTimeCompleted);
+                    project.Completed = Boolean.Parse(n.GetValue("Completed"));
+                    project.InProgress = Boolean.Parse(n.GetValue("InProgress"));
+                    project.Part = PartLoader.Instance.parts.FirstOrDefault(p => p.name == project.Name);
+                    Debug.Log("SpaceRace: Loaded part " + project.Part.title);
+
+                    SpaceRaceMain.engineeringProjects.Add(project);
+                }
+            }
+            SREngineering.HideParts();
         }
 
         public override void OnSave(ConfigNode node)
         {
             base.OnSave(node);
-            ConfigNode cn = new ConfigNode("ScienceProjects");
+
+            ConfigNode spcn = new ConfigNode("ScienceProjects");
             foreach (ScienceProject project in SpaceRaceMain.researchProjects)
             {
                 if (project.Completed == false)
                 {
                     ConfigNode technode = new ConfigNode("TechNode");
-                    ConfigNode temp = new ConfigNode("Project");
+                    ConfigNode temp = new ConfigNode("ScienceProject");
                     project.pNode.Save(technode);
                     temp.AddValue("Title", project.TechName);
                     temp.AddValue("techID", project.techID);
@@ -60,56 +80,73 @@ namespace SpaceRace
                     temp.AddValue("Completed", project.Completed);
 
                     temp.AddNode(technode);
-                    cn.AddNode(temp);
+                    spcn.AddNode(temp);
                 }
 
             }
-            node.AddNode(cn);
-            //SaveData();
-        }
+            node.AddNode(spcn);
 
-        public void SaveData()
-        {
-            Debug.Log("SpaceRace: Firing SaveData.");
-
-            Debug.Log("SpaceRace: Firing BuildProjectList from SaveData");
-            SRScience.BuildProjectList();
-            using (StreamWriter writer = new StreamWriter(SpaceRaceMain.spaceracefolder + "RnDList"))
+            ConfigNode epcn = new ConfigNode("EngineeringProjects");
+            foreach (EngineeringProject project in SpaceRaceMain.engineeringProjects)
             {
-                foreach (string line in researchList)
+                if (project.Completed == false)
                 {
-                    writer.WriteLine(line);
-                    Debug.Log("SpaceRace: SaveData - Writing line: " + line);
-                }
-                writer.Close();
-            }
-        }
+                    ConfigNode temp = new ConfigNode("EngineeringProject");
+                    temp.AddValue("Name", project.Part.name);
+                    temp.AddValue("KerbalAssigned", project.KerbalAssigned);
+                    temp.AddValue("UTTimeCompleted", project.UTTimeCompleted);
+                    temp.AddValue("Completed", project.Completed);
+                    temp.AddValue("InProgress", project.InProgress);
 
-        public void LoadData()
-        {
-
-            researchList.Clear();
-            Debug.Log("SpaceRace: Calling LoadData");
-            if (File.Exists(SpaceRaceMain.spaceracefolder + "RnDList"))
-            {
-                using (StreamReader reader = new StreamReader(SpaceRaceMain.spaceracefolder + "RnDList"))
-                {
-                    string line = "";
-                    while ((line = reader.ReadLine()) != null)
-                    {
-                        researchList.Add(line);
-                    }
-                    Debug.Log(String.Format("SpaceRace: Loaded {0} lines into researchList", researchList.Count));
-                    reader.Close();
-                    SpaceRaceMain.lastLoaded = true;
-                }
-                SpaceRaceMain.researchProjects.Clear();
-                foreach (string line in SRUtilities.researchList)
-                {
-                    SRScience.RebuildProjects(line);
+                    epcn.AddNode(temp);
                 }
             }
+            node.AddNode(epcn);
+            
         }
+
+        //public void SaveData()
+        //{
+        //    Debug.Log("SpaceRace: Firing SaveData.");
+
+        //    Debug.Log("SpaceRace: Firing BuildProjectList from SaveData");
+        //    SRScience.BuildProjectList();
+        //    using (StreamWriter writer = new StreamWriter(SpaceRaceMain.spaceracefolder + "RnDList"))
+        //    {
+        //        foreach (string line in researchList)
+        //        {
+        //            writer.WriteLine(line);
+        //            Debug.Log("SpaceRace: SaveData - Writing line: " + line);
+        //        }
+        //        writer.Close();
+        //    }
+        //}
+
+        //public void LoadData()
+        //{
+
+        //    researchList.Clear();
+        //    Debug.Log("SpaceRace: Calling LoadData");
+        //    if (File.Exists(SpaceRaceMain.spaceracefolder + "RnDList"))
+        //    {
+        //        using (StreamReader reader = new StreamReader(SpaceRaceMain.spaceracefolder + "RnDList"))
+        //        {
+        //            string line = "";
+        //            while ((line = reader.ReadLine()) != null)
+        //            {
+        //                researchList.Add(line);
+        //            }
+        //            Debug.Log(String.Format("SpaceRace: Loaded {0} lines into researchList", researchList.Count));
+        //            reader.Close();
+        //            SpaceRaceMain.lastLoaded = true;
+        //        }
+        //        SpaceRaceMain.researchProjects.Clear();
+        //        foreach (string line in SRUtilities.researchList)
+        //        {
+        //            SRScience.RebuildProjects(line);
+        //        }
+        //    }
+        //}
     }
 }
 
