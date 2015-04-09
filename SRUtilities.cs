@@ -17,6 +17,17 @@ namespace SpaceRace
         {
             base.OnLoad(node);
             SpaceRaceMain.researchProjects.Clear();
+
+            ConfigNode rcn = node.GetNode("Rival");
+            if (rcn != null)
+            {
+                SRRival.rival = SRRival.DecodeRival(rcn);
+            }
+            if (rcn == null)
+            {
+                SRRival.rival = SRRival.CreateNewRival();
+            }
+
             ConfigNode spcn = node.GetNode("ScienceProjects");
             if (spcn != null)
             {
@@ -62,6 +73,8 @@ namespace SpaceRace
         public override void OnSave(ConfigNode node)
         {
             base.OnSave(node);
+
+            node.AddNode(SRRival.EncodeRival(SRRival.rival));
 
             ConfigNode spcn = new ConfigNode("ScienceProjects");
             foreach (ScienceProject project in SpaceRaceMain.researchProjects)

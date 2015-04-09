@@ -94,6 +94,7 @@ namespace SpaceRace
             SREngineering.HideParts();
         }
 
+
         public void TriggerLock()
         {
             Debug.Log("SpaceRace: Fired TriggerLock.");
