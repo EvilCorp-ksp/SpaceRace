@@ -21,7 +21,7 @@ namespace SpaceRace
         private Rect engineeringWindow = new Rect(Screen.width / 8, Screen.height / 4 + 100, 800, 400);
         private Rect rivalWindow = new Rect(Screen.width / 8, Screen.height / 4 + 100, 400, 125);
         private Rect kerbalDetails = new Rect(200, 200, 400, 275);
-        private Rect scienceProjects = new Rect(Screen.width / 2 - 200, Screen.height / 2 - 100, 400, 200);
+        private Rect scienceProjects = new Rect(Screen.width / 2 - 250, Screen.height / 2 - 100, 500, 200);
         private Rect assignKerbal = new Rect(Screen.width / 2 - 100, Screen.height / 2 - 100, 200, 200);
         private Rect pickSim = new Rect(Screen.width / 2 - 100, Screen.height / 2 - 100, 200, 200);
         private ProtoCrewMember kerbCrew;
@@ -189,6 +189,13 @@ namespace SpaceRace
                     {
                         GUILayout.Label("0:0:0:0", HighLogic.Skin.label, GUILayout.Width(100));
                     }
+                    if (GUILayout.Button("Rush", HighLogic.Skin.button))
+                    {
+                        float cost = Convert.ToSingle(Math.Round((project.UTTimeCompleted - Planetarium.GetUniversalTime()) / 21600, 0) + 1);
+                        project.UTTimeCompleted = Planetarium.GetUniversalTime();
+                        ResearchAndDevelopment.Instance.AddScience(-cost, TransactionReasons.RnDTechResearch);
+                        Debug.Log("SpaceRace: Rushed project " + project.techID + " for " + cost + " science");
+                    }
                     GUILayout.EndHorizontal();
                 }
             }
@@ -344,24 +351,27 @@ namespace SpaceRace
             GUILayout.BeginVertical();
             foreach (ProtoCrewMember k in HighLogic.CurrentGame.CrewRoster.Crew)
             {
-               GUILayout.BeginHorizontal();
-               GUILayout.Label(k.name , GUILayout.Width(150));
-               GUILayout.Label("Level " + k.experienceLevel.ToString(), GUILayout.Width(60));
-               GUILayout.Label(k.experienceTrait.TypeName, GUILayout.Width(60));
-               GUILayout.FlexibleSpace();
-               if (GUILayout.Button("Details", HighLogic.Skin.button, GUILayout.Width(50)))
-               {
-                   kerbCrew = k;
-                   RenderingManager.AddToPostDrawQueue(0, KerbDraw);
-               }
-               GUILayout.FlexibleSpace();
-               GUILayout.EndVertical();
+                if (k.rosterStatus == ProtoCrewMember.RosterStatus.Available)
+                {
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label(k.name, GUILayout.Width(150));
+                    GUILayout.Label("Level " + k.experienceLevel.ToString(), GUILayout.Width(60));
+                    GUILayout.Label(k.experienceTrait.TypeName, GUILayout.Width(60));
+                    GUILayout.FlexibleSpace();
+                    if (GUILayout.Button("Details", HighLogic.Skin.button, GUILayout.Width(50)))
+                    {
+                        kerbCrew = k;
+                        RenderingManager.AddToPostDrawQueue(0, KerbDraw);
+                    }
+                    GUILayout.FlexibleSpace();
+                    GUILayout.EndVertical();
+                }
             }
 
             GUILayout.EndVertical();
             GUILayout.EndScrollView();
             GUILayout.EndHorizontal();
-            if (GUILayout.Button("Close"))
+            if (GUILayout.Button("Close", HighLogic.Skin.button))
             {
                 RenderingManager.RemoveFromPostDrawQueue(0, TrainingDraw);
             }
@@ -375,31 +385,15 @@ namespace SpaceRace
 
         private void DetailsWindow(int windowId)
         {
-            float t = (kerbCrew.experienceLevel + 1) * 1000;
-            switch (kerbCrew.experienceLevel)
-            {
-                case 0:
-                    break;
-                case 1:
-                    t = 3000;
-                    break;
-                case 2:
-                    t = 6000;
-                    break;
-                case 3:
-                    t = 10000;
-                    break;
-                case 4:
-                    t = 15000;
-                    break;
-                default:
-                    break;
-            }
+            float t = simulations[simIndex].xp * 1000;
 
             GUILayout.BeginHorizontal();
             GUILayout.BeginVertical();
             GUILayout.Label(kerbCrew.name);
             GUILayout.Label("\nLevel " + kerbCrew.experienceLevel + " " + kerbCrew.experienceTrait.TypeName,HighLogic.Skin.label ,GUILayout.ExpandWidth(true));
+#if DEBUG
+            GUILayout.Label("XP " + kerbCrew.experience, HighLogic.Skin.label);
+#endif
             GUILayout.Label(kerbCrew.experienceTrait.Description);
             GUILayout.Label("Traits: ");
             GUILayout.Label(kerbCrew.experienceTrait.DescriptionEffects);
@@ -432,8 +426,6 @@ namespace SpaceRace
             {
                 GUILayout.Label("Maximum level, no more \ntraining possible", HighLogic.Skin.label);
             }
-            //GUILayout.Label("Traits: ", HighLogic.Skin.label);
-            //GUILayout.Label(kerbCrew.experienceTrait.DescriptionEffects, HighLogic.Skin.label);
             GUILayout.EndVertical();
             GUILayout.EndHorizontal();
             GUILayout.FlexibleSpace();
