@@ -605,6 +605,5 @@ namespace SpaceRace
             GUILayout.EndHorizontal();
             GUI.DragWindow();
         }
-
      }
 }
