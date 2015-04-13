@@ -10,17 +10,51 @@ namespace SpaceRace
     class SRRival
     {
         
-        public static List<Events> eventList = new List<Events>();
-        public static Rival rival = new Rival();
+        [Persistent] public static List<EventEntry> eventList = new List<EventEntry>();
+        
+        [Persistent] public static Rival rival = new Rival();
         
         public static void BuildEventList()
         {
             eventList.Clear();
+            
+            eventList.Add(new EventEntry { Name = "Attempted Break-in", FlavorText = "Operative from your rival space agency were caught trying to break into your facility! They were apprehended and forced to test dangerous materials as punishment.", Type = EventType.TextOnly, Major = false, Repeatable = true, Used = false });
+            eventList.Add(new EventEntry { Name = "Test launch successful", FlavorText = "Your rival agency has completed a successful test flight of their new rocket!", Type = EventType.TextOnly, Major = false, Repeatable = true, Used = false });
+            eventList.Add(new EventEntry { Name = "Succesful unmanned orbit", FlavorText = rival.Name + " has launched an unmanned rocket into Kerbin's orbit.", Type = EventType.TextOnly, Major = false, Repeatable = true, Used = false });
+            eventList.Add(new EventEntry { Name = "Equipment failure", FlavorText = rival.Name + " has had an emergency shut down due to a chemical leak.", Type = EventType.TextOnly, Major = false, Repeatable = true, Used = false });
+            eventList.Add(new EventEntry { Name = "Private grant awarded", Type = EventType.BonusFunds, Major = false, Repeatable = true, Used = false });
+            eventList.Add(new EventEntry { Name = "Government grant awarded", Type = EventType.BonusFunds, Major = false, Repeatable = true, Used = false });
+            eventList.Add(new EventEntry { Name = "Safety violations", Type = EventType.Fine, Major = false, Repeatable = true, Used = false });
+            eventList.Add(new EventEntry { Name = "Rival agency hired new staff", Type = EventType.Headhunt, Major = false, Repeatable = true, Used = false });
+            eventList.Add(new EventEntry { Name = "Rival accepted contract", Type = EventType.Contract, Major = false, Repeatable = true, Used = false });
+            eventList.Add(new EventEntry { Name = "Rival lost staff", Type = EventType.LostStaff, Major = false, Repeatable = true, Used = false });
+            eventList.Add(new EventEntry { Name = "Rival completed prototype", Type = EventType.PartResearch, Major = false, Repeatable = true, Used = false });
+
+            eventList.Add(new EventEntry { Name = "Major donation given to Rival", Type = EventType.BonusFunds, Major = true, Repeatable = false, Used = false });
+            eventList.Add(new EventEntry { Name = "Major mission launched", Type = EventType.MajorMission, CelestialBody = "Mun", Major = true, Repeatable = false, Used = false });
+            eventList.Add(new EventEntry { Name = "Major mission launched", Type = EventType.MajorMission, CelestialBody = "Minmus", Major = true, Repeatable = false, Used = false });
+            eventList.Add(new EventEntry { Name = "Major mission launched", Type = EventType.MajorMission, CelestialBody = "Duna", Major = true, Repeatable = false, Used = false });
+            eventList.Add(new EventEntry { Name = "Major mission launched", Type = EventType.MajorMission, CelestialBody = "Eve", Major = true, Repeatable = false, Used = false });
+            eventList.Add(new EventEntry { Name = "Major mission launched", Type = EventType.MajorMission, CelestialBody = "Jool", Major = true, Repeatable = false, Used = false });
+            eventList.Add(new EventEntry { Name = "Major mission launched", Type = EventType.MajorMission, CelestialBody = "Tylo", Major = true, Repeatable = false, Used = false });
+            eventList.Add(new EventEntry { Name = "Major mission launched", Type = EventType.MajorMission, CelestialBody = "Kerbol", Major = true, Repeatable = false, Used = false });
+            eventList.Add(new EventEntry { Name = "Catastrophic setback", Type = EventType.Catastrophe, Major = true, Repeatable = false, Used = false });
+            eventList.Add(new EventEntry { Name = "Science stolen!", Type = EventType.BonusScience, Major = true, Repeatable = true, Used = false });
+            eventList.Add(new EventEntry { Name = "Staff hired away from your pool", Type = EventType.StoleStaff, Major = true, Repeatable = true, Used = false });
         }
 
-        public Events PickEvent(string type)
+        public static EventEntry PickMinorEvent()
         {
-            List<Events> randomEvent = eventList.FindAll(e => e.Used == false || e.Repeatable == true);
+            List<EventEntry> randomEvent = eventList.FindAll(e => (e.Used == false || e.Repeatable == true) && e.Major == false);
+            int result = UnityEngine.Random.Range(0, randomEvent.Count());
+
+            randomEvent[result].Used = true;
+            return randomEvent[result];
+        }
+
+        public static EventEntry PickMajorEvent()
+        {
+            List<EventEntry> randomEvent = eventList.FindAll(e => (e.Used == false || e.Repeatable == true) && e.Major == true);
             int result = UnityEngine.Random.Range(0, randomEvent.Count());
 
             randomEvent[result].Used = true;
@@ -34,6 +68,7 @@ namespace SpaceRace
                 int result = UnityEngine.Random.Range(0, 99);
                 if (result >= 0 && result < 26)
                 {
+                    GenerateEvent(false);
                     rival.PreviousMinor = Planetarium.GetUniversalTime();
                     rival.NextMinor = Planetarium.GetUniversalTime() + UnityEngine.Random.Range(216000, 864000);
                 }
@@ -47,9 +82,25 @@ namespace SpaceRace
                 int result = UnityEngine.Random.Range(0, 99);
                 if (result >= 0 && result < 35)
                 {
+                    GenerateEvent(true);
                     rival.PreviousMajor =  Math.Floor(Planetarium.GetUniversalTime() / 21600);
                     rival.NextMinor = Math.Floor(Planetarium.GetUniversalTime() / 21600) + 106;
                 }
+            }
+        }
+
+        public static void GenerateEvent(bool major)
+        {
+            EventEntry entry = new EventEntry();
+            if (major == true)
+            {
+                entry = PickMajorEvent();
+                Debug.Log("SpaceRace: Rival event entry selected. Major: " + entry.Major + " Title: " + entry.Name + " Time: " + Planetarium.GetUniversalTime() + " Next interval: " + rival.NextMajor);
+            }
+            else if (major == false)
+            {
+                entry = PickMinorEvent();
+                Debug.Log("SpaceRace: Rival event entry selected. Major: " + entry.Major + " Title: " + entry.Name + " Time: " + Planetarium.GetUniversalTime() + " Next interval: " + rival.NextMinor);
             }
         }
 
@@ -115,10 +166,10 @@ namespace SpaceRace
             return cn;
         }
 
-        public static ConfigNode EncodeEvents(List<Events> list)
+        public static ConfigNode EncodeEvents(List<EventEntry> list)
         {
             ConfigNode cn = new ConfigNode("EventList");
-            foreach (Events entry in list)
+            foreach (EventEntry entry in list)
             {
                 ConfigNode cnEvent = new ConfigNode("Event");
                 cnEvent.AddValue("Name", entry.Name);
@@ -160,13 +211,13 @@ namespace SpaceRace
             return temp;
         }
 
-        public static List<Events> DecodeEvents(ConfigNode node)
+        public static List<EventEntry> DecodeEvents(ConfigNode node)
         {
             ConfigNode cn = node.GetNode("EventList");
-            List<Events> temp = new List<Events>();
+            List<EventEntry> temp = new List<EventEntry>();
             foreach (ConfigNode cnEvent in cn.GetNodes("Event"))
             {
-                temp.Add(new Events()
+                temp.Add(new EventEntry()
                 {
                     Name = cnEvent.GetValue("Name"),
                     Science = Convert.ToInt32(cnEvent.GetValue("Science")),
@@ -219,7 +270,7 @@ namespace SpaceRace
 
     }
 
-    public class Events
+    public class EventEntry
     {
         public bool Repeatable { get; set; }
         public bool Used { get; set; }
@@ -233,6 +284,7 @@ namespace SpaceRace
         public string techID { get; set; }
         public string Kerbal { get; set; }
         public string PartName { get; set; }
+        public bool Major { get; set; }
     }
 
     public enum EventType
@@ -247,7 +299,9 @@ namespace SpaceRace
         MajorMission = 7,
         Catastrophe = 8,
         PlayerStealsScience = 9,
-        PlayerStealsPlans = 10
+        PlayerStealsPlans = 10,
+        PartResearch = 11,
+        StoleStaff = 12
     }
 
     public class Rival
