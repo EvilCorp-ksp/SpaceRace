@@ -9,7 +9,7 @@ using SpaceRace;
 
 namespace SpaceRace
 {
-    [KSPAddon(KSPAddon.Startup.SpaceCentre, false)]
+    [KSPAddon(KSPAddon.Startup.EveryScene, true)]
     public class SpaceRaceMain : MonoBehaviour
     {
         public static String save_folder = "";
@@ -326,6 +326,7 @@ namespace SpaceRace
 
         void OnGUIAppLauncherReady()
         {
+            if (ApplicationLauncher.Ready && button == null)
             {
                 this.button = ApplicationLauncher.Instance.AddModApplication(
                     onAppLauncherToggleOn,
@@ -372,14 +373,18 @@ namespace SpaceRace
 
         public void OnDestroy()
         {
-            GameEvents.onGUIApplicationLauncherReady.Remove(OnGUIAppLauncherReady);
+            if (button != null)
+            {
+                GameEvents.onGUIApplicationLauncherReady.Remove(OnGUIAppLauncherReady);
+                Debug.Log("SpaceRace: Removed ApplicationLauncher button.");
+            }
             GameEvents.OnTechnologyResearched.Remove(TriggerResearch);
             GameEvents.onGUIRnDComplexDespawn.Remove(TriggerLock);
             GameEvents.OnPartPurchased.Remove(AddEngineeringProject);
-            if (HighLogic.LoadedSceneHasPlanetarium || HighLogic.LoadedSceneIsEditor || HighLogic.LoadedSceneIsFlight)
-            {
+            //if (HighLogic.LoadedSceneHasPlanetarium || HighLogic.LoadedSceneIsEditor || HighLogic.LoadedSceneIsFlight)
+            //{
                 ApplicationLauncher.Instance.RemoveModApplication(button);
-            }
+            //}
         }
 
         void OnGUI()
