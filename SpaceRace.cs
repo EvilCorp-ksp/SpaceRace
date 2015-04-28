@@ -40,12 +40,16 @@ namespace SpaceRace
         public static bool lastLoaded = false;
         public int currentScience = 0;
 
+
         void FixedUpdate()
         {
             if (HighLogic.LoadedSceneHasPlanetarium)
             {
                 SRScience.CheckCompletedProjects();
                 SREngineering.CheckCompletedProjects();
+                SRRival.MajorEvent();
+                SRRival.MinorEvent();
+                    //Debug.Log("SpaceRace: " + SRRival.eventList.Count + " items in event list.");
             }
         }
 

@@ -10,9 +10,9 @@ namespace SpaceRace
     class SRRival
     {
         
-        [Persistent] public static List<EventEntry> eventList = new List<EventEntry>();
+        public static List<EventEntry> eventList = new List<EventEntry>();
         
-        [Persistent] public static Rival rival = new Rival();
+        public static Rival rival = new Rival();
         
         public static void BuildEventList()
         {
@@ -20,7 +20,7 @@ namespace SpaceRace
             
             eventList.Add(new EventEntry { Name = "Attempted Break-in", FlavorText = "Operative from your rival space agency were caught trying to break into your facility! They were apprehended and forced to test dangerous materials as punishment.", Type = EventType.TextOnly, Major = false, Repeatable = true, Used = false });
             eventList.Add(new EventEntry { Name = "Test launch successful", FlavorText = "Your rival agency has completed a successful test flight of their new rocket!", Type = EventType.TextOnly, Major = false, Repeatable = true, Used = false });
-            eventList.Add(new EventEntry { Name = "Succesful unmanned orbit", FlavorText = rival.Name + " has launched an unmanned rocket into Kerbin's orbit.", Type = EventType.TextOnly, Major = false, Repeatable = true, Used = false });
+            eventList.Add(new EventEntry { Name = "Successful unmanned orbit", FlavorText = rival.Name + " has launched an unmanned rocket into Kerbin's orbit.", Type = EventType.TextOnly, Major = false, Repeatable = true, Used = false });
             eventList.Add(new EventEntry { Name = "Equipment failure", FlavorText = rival.Name + " has had an emergency shut down due to a chemical leak.", Type = EventType.TextOnly, Major = false, Repeatable = true, Used = false });
             eventList.Add(new EventEntry { Name = "Private grant awarded", Type = EventType.BonusFunds, Major = false, Repeatable = true, Used = false });
             eventList.Add(new EventEntry { Name = "Government grant awarded", Type = EventType.BonusFunds, Major = false, Repeatable = true, Used = false });
@@ -45,7 +45,17 @@ namespace SpaceRace
 
         public static EventEntry PickMinorEvent()
         {
-            List<EventEntry> randomEvent = eventList.FindAll(e => (e.Used == false || e.Repeatable == true) && e.Major == false);
+            List<EventEntry> randomEvent = new List<EventEntry>();
+            foreach (EventEntry e in eventList)
+            {
+                if (e.Major == false)
+                {
+                    if (e.Used == false || e.Repeatable == true)
+                    {
+                        randomEvent.Add(e);
+                    }
+                }
+            }
             int result = UnityEngine.Random.Range(0, randomEvent.Count());
 
             randomEvent[result].Used = true;
@@ -54,10 +64,24 @@ namespace SpaceRace
 
         public static EventEntry PickMajorEvent()
         {
-            List<EventEntry> randomEvent = eventList.FindAll(e => (e.Used == false || e.Repeatable == true) && e.Major == true);
-            int result = UnityEngine.Random.Range(0, randomEvent.Count());
+            List<EventEntry> randomEvent = new List<EventEntry>();
+            int result = 0;
+            foreach (EventEntry e in eventList)
+            {
+                if (e.Major == true)
+                {
+                    if (e.Used == false || e.Repeatable == true)
+                    {
+                        randomEvent.Add(e);
+                    }
+                }
+            }
+            if (randomEvent.Count() > 0)
+            {
+                result = UnityEngine.Random.Range(0, randomEvent.Count());
 
-            randomEvent[result].Used = true;
+                randomEvent[result].Used = true;
+            }
             return randomEvent[result];
         }
 
@@ -68,23 +92,23 @@ namespace SpaceRace
                 int result = UnityEngine.Random.Range(0, 99);
                 if (result >= 0 && result < 26)
                 {
-                    GenerateEvent(false);
                     rival.PreviousMinor = Planetarium.GetUniversalTime();
                     rival.NextMinor = Planetarium.GetUniversalTime() + UnityEngine.Random.Range(216000, 864000);
+                    GenerateEvent(false);
                 }
             }
         }
 
         public static void MajorEvent()
         {
-            if (Planetarium.GetUniversalTime() / 21600 >= rival.NextMajor)
+            if ((Planetarium.GetUniversalTime() / 21600) >= rival.NextMajor)
             {
                 int result = UnityEngine.Random.Range(0, 99);
                 if (result >= 0 && result < 35)
                 {
+                    rival.PreviousMajor = Math.Floor(Planetarium.GetUniversalTime() / 21600);
+                    rival.NextMajor = Math.Floor(Planetarium.GetUniversalTime() / 21600) + 106;
                     GenerateEvent(true);
-                    rival.PreviousMajor =  Math.Floor(Planetarium.GetUniversalTime() / 21600);
-                    rival.NextMinor = Math.Floor(Planetarium.GetUniversalTime() / 21600) + 106;
                 }
             }
         }
@@ -95,7 +119,7 @@ namespace SpaceRace
             if (major == true)
             {
                 entry = PickMajorEvent();
-                Debug.Log("SpaceRace: Rival event entry selected. Major: " + entry.Major + " Title: " + entry.Name + " Time: " + Planetarium.GetUniversalTime() + " Next interval: " + rival.NextMajor);
+                Debug.Log("SpaceRace: Rival event entry selected. Major: " + entry.Major + " Title: " + entry.Name + " Time: " + Planetarium.GetUniversalTime() / 21600 + " Next interval: " + rival.NextMajor);
             }
             else if (major == false)
             {
@@ -106,6 +130,7 @@ namespace SpaceRace
 
         public static Rival CreateNewRival()
         {
+            Debug.Log("SpaceRace: Fired CreateNewRival");
             Rival r = new Rival()
             {
                 Name = "Space-Z",
@@ -113,9 +138,9 @@ namespace SpaceRace
                 Funds = 25000f,
                 Reputation = 0f,
                 PreviousMinor = Planetarium.GetUniversalTime(),
-                PreviousMajor = Math.Floor(Planetarium.GetUniversalTime() / 21600),
+                PreviousMajor = Planetarium.GetUniversalTime() / 21600,
                 NextMinor = Planetarium.GetUniversalTime() + 216000,
-                NextMajor = Math.Floor(Planetarium.GetUniversalTime() / 21600) + 106,
+                NextMajor = (Planetarium.GetUniversalTime() / 21600) + 106,
                 Staff = HireStartingKerbals(),
                 ScienceNodes = new List<string>() { "start" }
             };
@@ -192,28 +217,34 @@ namespace SpaceRace
 
         public static Rival DecodeRival(ConfigNode node)
         {
-            ConfigNode cn = node.GetNode("Rival");
-            ConfigNode cnScience = cn.GetNode("UnlockedScience");
+            ConfigNode cn = node;
             ConfigNode cnStaff = cn.GetNode("Staff");
+            ConfigNode cnScience = cn.GetNode("UnlockedScience");
             Rival temp = new Rival();
+            List<string> scienceNodes = new List<string>();
+            List<string> staffMembers = new List<string>();
+
             temp.Name = cn.GetValue("Name");
             temp.CurrentScience = Convert.ToInt32(cn.GetValue("Science"));
             temp.Funds = Convert.ToDouble(cn.GetValue("Funds"));
             temp.Reputation = Convert.ToDouble(cn.GetValue("Reputation"));
+
             foreach (string s in cnScience.GetValues("ScienceNode"))
             {
-                temp.ScienceNodes.Add(s);
+                scienceNodes.Add(s);
             }
             foreach (string s in cnStaff.GetValues("StaffMember"))
             {
-                temp.Staff.Add(s);
+                staffMembers.Add(s);
             }
+            temp.ScienceNodes = scienceNodes;
+            temp.Staff = staffMembers;
             return temp;
         }
 
         public static List<EventEntry> DecodeEvents(ConfigNode node)
         {
-            ConfigNode cn = node.GetNode("EventList");
+            ConfigNode cn = node;
             List<EventEntry> temp = new List<EventEntry>();
             foreach (ConfigNode cnEvent in cn.GetNodes("Event"))
             {

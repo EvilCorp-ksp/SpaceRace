@@ -78,6 +78,7 @@ namespace SpaceRace
                 }
             }
             SREngineering.HideParts();
+            Debug.Log("SpaceRace: " + SRRival.eventList.Count + " items in event list.");
         }
 
         public override void OnSave(ConfigNode node)
